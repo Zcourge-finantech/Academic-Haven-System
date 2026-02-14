@@ -343,7 +343,7 @@
 
     <script>
         // --- CONSTANTS ---
-        const DB_KEY = 'academic_haven_v1_data';
+        const DB_KEY = 'academic_haven_v3_data';
         const MQTT_BROKER = "broker.hivemq.com";
         const MQTT_PORT = 8884;
         const MQTT_PATH = "/mqtt";
@@ -449,6 +449,11 @@
             user: null, view: 'dashboard', zoom: 1,
             init() {
                 this.root = document.getElementById('app');
+                // Force update logo if it's the old relative path to ensure portability
+                if (db.data.settings.logoUrl === 'logo.png' || !db.data.settings.logoUrl.startsWith('data:')) {
+                    db.data.settings.logoUrl = SEED.settings.logoUrl;
+                    db.save();
+                }
                 this.render();
                 lucide.createIcons();
             },
