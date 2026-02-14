@@ -485,7 +485,7 @@
                             </div>
 
                             <nav style="flex:1">
-                                ${['dashboard', 'tenants', 'rooms', 'payments', 'expenses', 'reports'].map(v => `
+                                ${['dashboard', 'tenants', 'rooms', 'payments', 'expenses', 'reports', 'settings'].map(v => `
                                     <div class="nav-item ${this.view === v ? 'active' : ''}" onclick="App.setView('${v}')">
                                         <i data-lucide="${this.getIcon(v)}"></i>
                                         <span style="text-transform:capitalize;">${v}</span>
@@ -547,7 +547,7 @@
             },
 
             getIcon(v) {
-                const icons = { dashboard: 'layout-dashboard', tenants: 'users', rooms: 'door-open', payments: 'wallet', expenses: 'receipt', reports: 'file-text' };
+                const icons = { dashboard: 'layout-dashboard', tenants: 'users', rooms: 'door-open', payments: 'wallet', expenses: 'receipt', reports: 'file-text', settings: 'settings' };
                 return icons[v];
             },
 
@@ -599,6 +599,7 @@
                     case 'payments': this.viewPayments(el); break;
                     case 'expenses': this.viewExpenses(el); break;
                     case 'reports': this.viewReports(el); break;
+                    case 'settings': this.viewSettings(el); break;
                 }
             },
 
@@ -953,6 +954,81 @@
                     </div>
                 `;
                 lucide.createIcons();
+            },
+
+            viewSettings(el) {
+                el.innerHTML = `
+                    <div class="animate-up">
+                        <div class="card" style="max-width:600px; margin:0 auto;">
+                            <h3 style="margin-bottom:2rem;">General Settings</h3>
+                            
+                            <div style="display:flex; flex-direction:column; gap:1.5rem;">
+                                <div>
+                                    <label style="display:block; font-size:0.8rem; color:var(--text-muted); margin-bottom:0.5rem;">House Name</label>
+                                    <input type="text" id="s-houseName" class="input" value="${db.data.settings.houseName}">
+                                </div>
+
+                                <div>
+                                    <label style="display:block; font-size:0.8rem; color:var(--text-muted); margin-bottom:0.5rem;">System Logo</label>
+                                    <div style="display:flex; gap:1.5rem; align-items:center; padding:1.5rem; background:rgba(0,0,0,0.2); border-radius:12px; border:1px solid var(--border);">
+                                        <div style="width:80px; height:80px; border-radius:16px; background:var(--bg-card); display:flex; align-items:center; justify-content:center; border:1px solid var(--primary); overflow:hidden;">
+                                            <img id="s-logo-preview" src="${db.data.settings.logoUrl}" style="width:100%; height:100%; object-fit:cover;">
+                                        </div>
+                                        <div style="flex:1">
+                                            <p style="font-size:0.75rem; color:var(--text-muted); margin-bottom:1rem;">Upload a new logo to permanently update all branding.</p>
+                                            <label class="btn btn-outline" style="width:100%">
+                                                <i data-lucide="upload"></i> Change Logo
+                                                <input type="file" id="s-logo-file" hidden accept="image/*" onchange="App.handleLogoUpload(this)">
+                                            </label>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div style="margin-top:1rem; padding-top:1.5rem; border-top:1px solid var(--border); display:flex; gap:1rem;">
+                                    <button class="btn btn-primary" style="flex:1" onclick="App.saveSettings()">
+                                        <i data-lucide="save"></i> Save All Changes
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="card" style="max-width:600px; margin:2rem auto; border-color:var(--danger-border); background:rgba(239, 68, 68, 0.05);">
+                            <h3 style="color:var(--danger); margin-bottom:1rem;">System Reset</h3>
+                            <p style="font-size:0.85rem; color:var(--text-muted); margin-bottom:1.5rem;">Warning: This will clear all data and reset to initial state. This action cannot be undone.</p>
+                            <button class="btn btn-outline" style="color:var(--danger); border-color:var(--danger);" onclick="if(confirm('WIPE ALL DATA?')) { localStorage.clear(); location.reload(); }">
+                                Factory Reset
+                            </button>
+                        </div>
+                    </div>
+                `;
+                lucide.createIcons();
+            },
+
+            handleLogoUpload(input) {
+                const file = input.files[0];
+                if (!file) return;
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    const base64 = e.target.result;
+                    document.getElementById('s-logo-preview').src = base64;
+                    this.tempLogo = base64;
+                };
+                reader.readAsDataURL(file);
+            },
+
+            saveSettings() {
+                const houseName = document.getElementById('s-houseName').value.trim();
+                if (!houseName) return alert("House Name is required.");
+
+                db.data.settings.houseName = houseName;
+                if (this.tempLogo) {
+                    db.data.settings.logoUrl = this.tempLogo;
+                    delete this.tempLogo;
+                }
+
+                db.save();
+                alert("Settings saved successfully!");
+                location.reload(); // Hard reload to ensure header and titles update
             },
 
             // --- MODALS & UTILS ---
